@@ -1,0 +1,93 @@
+name: Monitor Dependency PRs
+
+on:
+  push:
+    branches:
+      - main
+      - use-monitoring-module
+  workflow_dispatch:
+#   schedule:
+#     - cron: '*/10 * * * *'  # Runs every 10 minutes
+
+permissions:
+      id-token: write
+      contents: read
+      pull-requests: read
+jobs:
+  list_dependent_prs:
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: List Pull Requests with Dependencies Label
+        id: list_prs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+                          -H "Accept: application/vnd.github.v3+json" \
+                          "https://api.github.com/repos/${{ github.repository }}/pulls?state=open&per_page=100")
+          
+          prs_with_label=$(echo "$response" | jq -r '.[] | select(.labels | map(.name) | index("dependencies")) | "- " + .title + " (#" + (.number|tostring) + ")"')
+          
+          if [ -n "$prs_with_label" ]; then
+            echo "Found the following PRs with the 'dependencies' label:"
+            echo "$prs_with_label"
+            pr_count=$(echo "$prs_with_label" | wc -l)
+          else
+            echo "No open PRs with the 'dependencies' label found."
+            pr_count=0
+          fi
+
+          # Export the PR count as an environment variable for later steps
+          echo "PR_COUNT=$pr_count" >> $GITHUB_ENV
+
+      - name: Post PR Count to Atlassian Compass
+        env:
+          COMPASS_API_TOKEN: ${{ secrets.COMPASS_TOKEN }}
+          PR_COUNT: ${{ env.PR_COUNT }}
+        run: |
+          env
+          curl --request POST \
+          --url https://gc3-uk.atlassian.net/gateway/api/compass/v1/metrics \
+          --user "seyit.tolga@digital.cabinet-office.gov.uk:${{ secrets.COMPASS_TOKEN }}" \
+          --header "Accept: application/json" \
+          --header "Content-Type: application/json" \
+          --data "{
+            \"metricSourceId\": \"ari:cloud:compass:6eae8c34-1cc3-4fa2-920d-51a49db53f96:metric-source/32d17fc8-4e68-4d74-884d-dae232f11295/d1f8f862-0333-4a63-9f01-70cf433569f5\",
+            \"value\": ${PR_COUNT}'
+            \"timestamp\": \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\"
+          }"
+          # component_id="your_component_id"  # Replace with your actual component ID
+          # metric_key="open_prs_with_dependencies"  # Replace with your Compass metric key
+          # curl -X POST "https://api.atlassian.com/compass/metrics/${metric_key}/record" \
+          #   -H "Authorization: Bearer $COMPASS_API_TOKEN" \
+          #   -H "Content-Type: application/json" \
+          #   -d '{
+          #         "resourceId": "'"${component_id}"'",
+          #         "value": '"${PR_COUNT}"'
+          #       }'
+          # --user "seyit.tolga@digital.cabinet-office.gov.uk:$USER_API_KEY" \
+          # --user "$USER_EMAIL:$USER_API_KEY" \
+
+      # - name: List Pull Requests with Dependencies Label
+      #   id: list_prs
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   run: |
+      #     response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+      #                     -H "Accept: application/vnd.github.v3+json" \
+      #                     "https://api.github.com/repos/${{ github.repository }}/pulls?state=open&per_page=100")
+      #     # echo "$response"
+      #     prs_with_label=$(echo "$response" | jq -r '.[] | select(.labels | map(.name) | index("dependencies")) | "- " + .title + " (#" + (.number|tostring) + ")"')
+
+      #     if [ -n "$prs_with_label" ]; then
+      #       echo "Found the following PRs with the 'dependencies' label:"
+      #       echo "$prs_with_label"
+      #     else
+      #       echo "No open PRs with the 'dependencies' label found."
+      #       echo "$response"
+      #     fi

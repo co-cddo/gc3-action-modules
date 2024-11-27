@@ -1,0 +1,25 @@
+name: Monitor Dependency PRs
+
+on:
+  push:
+    branches:
+      - main
+      - use-monitoring-module
+  workflow_dispatch:
+#   schedule:
+#     - cron: '*/10 * * * *'  # Runs every 10 minutes
+
+permissions:
+      id-token: write
+      contents: read
+      pull-requests: read
+jobs:
+  monitor-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Monitor Dependency PRs
+        uses: co-cddo/gc3-action-modules/monitor-dependency-prs@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          compass-token: ${{ secrets.COMPASS_TOKEN }}
+
