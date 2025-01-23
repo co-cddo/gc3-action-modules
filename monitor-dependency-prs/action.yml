@@ -1,6 +1,9 @@
 name: Monitor Dependency PRs
 
 inputs:
+  test1:
+    description: 'test1'
+    required: true
   compass-token:
     description: 'Atlassian Compass API Token'
     required: true
