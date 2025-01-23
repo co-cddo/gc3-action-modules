@@ -57,6 +57,7 @@ runs:
 
         # Export the PR count as an environment variable for later steps
         echo "PR_COUNT=$pr_count" >> $GITHUB_ENV
+      shell: bash
 
     - name: Post PR Count to Atlassian Compass
       env:
@@ -73,3 +74,4 @@ runs:
             \"value\": ${PR_COUNT},
             \"timestamp\": \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\"
           }"
+      shell: bash
