@@ -1,13 +1,10 @@
 name: Monitor Dependency PRs
 
 inputs:
-  test1:
-    description: 'test1'
-    required: true
   compass-token:
     description: 'Atlassian Compass API Token'
     required: true
-  gh-token:
+  github-token:
     description: 'GitHub Token'
     required: true
 outputs:
@@ -33,7 +30,7 @@ runs:
     - name: List Pull Requests with Dependencies Label
       id: list_prs
       env:
-        GITHUB_TOKEN: ${{ inputs.gh-token }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
       run: |
         env
         response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
