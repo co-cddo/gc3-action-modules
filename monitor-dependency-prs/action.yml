@@ -1,39 +1,31 @@
 name: Monitor Dependency PRs
 
 inputs:
-  github-token:
-    description: 'GitHub Token'
-    required: true
   compass-token:
     description: 'Atlassian Compass API Token'
+    required: true
+  github-token:
+    description: 'GitHub Token'
     required: true
 outputs:
   pr-count:
     description: 'Number of open PRs with the dependencies label'
-
-# on:
-#   push:
-#     branches:
-#       - main
-#       - use-monitoring-module
-#   workflow_dispatch:
-# #   schedule:
-# #     - cron: '*/10 * * * *'  # Runs every 10 minutes
-
+    
 # permissions:
 #       id-token: write
 #       contents: read
 #       pull-requests: read
-# jobs:
-#   list_dependent_prs:
-#     runs-on: ubuntu-latest
-#     environment:
-#       name: staging
+
 runs:
   using: 'composite'
   steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
+
+    - name: Debug Action Version
+      run: cat $GITHUB_ACTION_PATH/action.yml
+      shell: bash
+
+    # - name: Checkout Repository
+    #   uses: actions/checkout@v3
 
     - name: List Pull Requests with Dependencies Label
       id: list_prs
@@ -61,9 +53,10 @@ runs:
 
     - name: Post PR Count to Atlassian Compass
       env:
-        COMPASS_TOKEN: ${{ inputs.compass-token }}
+        COMPASS_API_TOKEN: ${{ inputs.compass-token }}
         PR_COUNT: ${{ env.PR_COUNT }}
       run: |
+        env
         curl --request POST \
           --url https://gc3-uk.atlassian.net/gateway/api/compass/v1/metrics \
           --user "seyit.tolga@digital.cabinet-office.gov.uk:${{ inputs.compass-token }}" \
