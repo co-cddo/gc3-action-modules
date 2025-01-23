@@ -4,7 +4,7 @@ inputs:
   compass-token:
     description: 'Atlassian Compass API Token'
     required: true
-  github-token:
+  gh-token:
     description: 'GitHub Token'
     required: true
 outputs:
@@ -30,8 +30,9 @@ runs:
     - name: List Pull Requests with Dependencies Label
       id: list_prs
       env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GITHUB_TOKEN: ${{ inputs.gh-token }}
       run: |
+        env
         response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
                         -H "Accept: application/vnd.github.v3+json" \
                         "https://api.github.com/repos/${{ github.repository }}/pulls?state=open&per_page=100")
@@ -59,7 +60,7 @@ runs:
         env
         curl --request POST \
           --url https://gc3-uk.atlassian.net/gateway/api/compass/v1/metrics \
-          --user "seyit.tolga@digital.cabinet-office.gov.uk:${{ inputs.compass-token }}" \
+          --user "seyit.tolga@digital.cabinet-office.gov.uk:$COMPASS_API_TOKEN" \
           --header "Accept: application/json" \
           --header "Content-Type: application/json" \
           --data "{
